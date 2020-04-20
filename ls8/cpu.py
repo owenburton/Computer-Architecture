@@ -56,12 +56,12 @@ class CPU:
         """
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
-            self.pc,
+            self.PC,
             #self.fl,
             #self.ie,
-            self.ram_read(self.pc),
-            self.ram_read(self.pc + 1),
-            self.ram_read(self.pc + 2)
+            self.ram_read(self.PC),
+            self.ram_read(self.PC + 1),
+            self.ram_read(self.PC + 2)
         ), end='')
 
         for i in range(8):
@@ -69,12 +69,35 @@ class CPU:
 
         print()
 
-    def ram_read(address):
+    def ram_read(self, address):
         return self.ram[address]
 
-    def ram_write(address, value):
+    def ram_write(self, address, value):
         self.ram[address] = value
 
     def run(self):
         """Run the CPU."""
-        pass
+        op_codes = {
+            0b10000010: 'LDI',
+            0b01000111: 'PRN',
+            0b00000001: 'HLT'
+            }
+        while True:
+            binary_op_code = self.ram_read(self.PC)
+            op = op_codes[binary_op_code]
+
+            if op=='LDI':
+                reg_num = self.ram_read(self.PC + 1)
+                value = self.ram_read(self.PC + 2)
+                self.reg[reg_num] = value
+                self.PC += 3
+            elif op=='PRN':
+                reg_num = self.ram_read(self.PC + 1)
+                value = self.reg[reg_num]
+                print(value)
+                self.PC += 2
+            elif op=='HLT':
+                break
+            else:
+                print('unknown binary operation code')
+                break
