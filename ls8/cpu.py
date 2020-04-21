@@ -16,19 +16,10 @@ class CPU:
         self.IM = self.reg[5]
         self.IS = self.reg[6]
         self.SP = self.reg[7]
-        self.ram = [0] * 8
+        self.ram = [0] * 32
 
     def load(self):
         """Load a program into memory."""
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
         address = 0
         if len(sys.argv)!=2:
             print('Wrong amount of args. \nUsage example: python ls8.py aprogram.ls8')
@@ -47,8 +38,9 @@ class CPU:
                 # remove '0b'
                 inst = inst[2:]
                 # convert str to int, base 2
+                # print(inst)
                 inst = int(inst, 2)
-                self.ram[address] = inst # convert to binary
+                self.ram[address] = inst
                 address += 1
 
 
@@ -58,6 +50,15 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
+        if op=="MUL":  
+            x, y = self.reg[reg_a], self.reg[reg_b]
+            ans = 0
+            while y>0:
+                if y&1:
+                    ans = ans + x
+                x = x << 1
+                y = y >> 1
+            print(ans)
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -92,8 +93,11 @@ class CPU:
         op_codes = {
             0b10000010: 'LDI',
             0b01000111: 'PRN',
-            0b00000001: 'HLT'
+            0b00000001: 'HLT',
+            0b10100010: 'MUL'
             }
+        alu_codes = set(['ADD', 'SUB', 'MUL'])
+
         while True:
             binary_op_code = self.ram_read(self.PC)
             op = op_codes[binary_op_code]
@@ -108,6 +112,11 @@ class CPU:
                 value = self.reg[reg_num]
                 print(value)
                 self.PC += 2
+            elif op in alu_codes:
+                reg1 = self.ram_read(self.PC + 1)
+                reg2 = self.ram_read(self.PC + 2)
+                self.alu(op, reg1, reg2)
+                self.PC += 3
             elif op=='HLT':
                 break
             else:
