@@ -8,15 +8,15 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.reg = [0] * 8
-        self.PC = self.reg[0]
-        self.IR = self.reg[1]
-        self.MAR = self.reg[2]
-        self.MDR = self.reg[3]
-        self.FL = self.reg[4]
+        self.PC = 0
+        self.IR = 0
+        self.MAR = 0
+        self.MDR = 0
+        self.FL = 0
         self.IM = self.reg[5]
         self.IS = self.reg[6]
         self.SP = self.reg[7]
-        self.ram = [0] * 32
+        self.ram = [0] * 256
 
     def load(self):
         """Load a program into memory."""
@@ -36,7 +36,7 @@ class CPU:
                 # remove whitespace
                 inst = inst.split()[0]
                 # remove '0b'
-                inst = inst[2:]
+                # inst = inst[2:]
                 # convert str to int, base 2
                 # print(inst)
                 inst = int(inst, 2)
@@ -94,11 +94,15 @@ class CPU:
             0b10000010: 'LDI',
             0b01000111: 'PRN',
             0b00000001: 'HLT',
-            0b10100010: 'MUL'
+            0b10100010: 'MUL',
+            0b01000101: 'PUSH',
+            0b01000110: 'POP'
             }
         alu_codes = set(['ADD', 'SUB', 'MUL'])
 
         while True:
+            # print(self.ram)
+            # print('--------------------------')
             binary_op_code = self.ram_read(self.PC)
             op = op_codes[binary_op_code]
 
@@ -117,6 +121,16 @@ class CPU:
                 reg2 = self.ram_read(self.PC + 2)
                 self.alu(op, reg1, reg2)
                 self.PC += 3
+            elif op=='PUSH':
+                self.SP -= 1
+                reg_num = self.ram_read(self.PC + 1)
+                self.ram[self.SP] = self.reg[reg_num]
+                self.PC += 2
+            elif op=='POP':
+                reg_num = self.ram_read(self.PC + 1)
+                self.reg[reg_num] = self.ram[self.SP]
+                self.SP += 1
+                self.PC += 2
             elif op=='HLT':
                 break
             else:
