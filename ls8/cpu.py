@@ -50,7 +50,7 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
-        if op=="MUL":  
+        elif op=="MUL":  
             x, y = self.reg[reg_a], self.reg[reg_b]
             ans = 0
             while y>0:
@@ -70,7 +70,7 @@ class CPU:
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.PC,
-            #self.fl,
+            # self.fl,
             #self.ie,
             self.ram_read(self.PC),
             self.ram_read(self.PC + 1),
@@ -94,14 +94,20 @@ class CPU:
             0b10000010: 'LDI',
             0b01000111: 'PRN',
             0b00000001: 'HLT',
+            0b10100000: 'ADD',
             0b10100010: 'MUL',
             0b01000101: 'PUSH',
-            0b01000110: 'POP'
+            0b01000110: 'POP',
+            0b01010000: 'CALL',
+            0b00010001: 'RET'
             }
         alu_codes = set(['ADD', 'SUB', 'MUL'])
 
         while True:
+            # print(self.reg)
             # print(self.ram)
+            # print('SP num: ', self.SP)
+            # print('PC num: ', self.PC)
             # print('--------------------------')
             binary_op_code = self.ram_read(self.PC)
             op = op_codes[binary_op_code]
@@ -131,6 +137,16 @@ class CPU:
                 self.reg[reg_num] = self.ram[self.SP]
                 self.SP += 1
                 self.PC += 2
+            elif op=='CALL':
+                # push address of intr after call to stack
+                self.SP -= 1
+                self.ram[self.SP] = self.PC + 2
+                # pc is set to address stored in reg, so can jump to that intr in ram
+                reg_num = self.ram_read(self.PC + 1)
+                self.PC = self.reg[reg_num]
+            elif op=='RET':
+                self.PC = self.ram_read(self.SP)
+                self.SP += 1
             elif op=='HLT':
                 break
             else:
