@@ -12,7 +12,7 @@ class CPU:
         self.IR = 0
         self.MAR = 0
         self.MDR = 0
-        self.FL = 0
+        self.FL = 0b00000000
         self.IM = self.reg[5]
         self.IS = self.reg[6]
         self.SP = self.reg[7]
@@ -28,12 +28,14 @@ class CPU:
         program_file = open(sys.argv[1])
 
         for line in program_file:
+            # print(line)
             # remove newline chars
             inst = line.strip() 
             if not inst.startswith('#'):
                 # keep stuff before before "#"
                 inst = inst.split('#', 1)[0]
                 # remove whitespace
+                # print(inst.split())
                 inst = inst.split()[0]
                 # remove '0b'
                 # inst = inst[2:]
@@ -59,6 +61,17 @@ class CPU:
                 x = x << 1
                 y = y >> 1
             print(ans)
+        elif op=='CMP':
+            # print('cmp running')
+            x, y = self.reg[reg_a], self.reg[reg_b]
+            if x==y:
+                self.FL = 1
+            else:
+                self.FL = 0
+            # elif x>y:
+            #     self.FL = 0b00000010
+            # else: # x<y
+            #     self.FL = 0b00000100
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -99,15 +112,20 @@ class CPU:
             0b01000101: 'PUSH',
             0b01000110: 'POP',
             0b01010000: 'CALL',
-            0b00010001: 'RET'
+            0b00010001: 'RET',
+            0b10100111: 'CMP',
+            0b01010100: 'JMP',
+            0b01010101: 'JEQ',
+            0b01010110: 'JNE'
             }
-        alu_codes = set(['ADD', 'SUB', 'MUL'])
+        alu_codes = set(['ADD', 'SUB', 'MUL', 'CMP'])
 
         while True:
             # print(self.reg)
-            # print(self.ram)
+            # print([(i,j) for i,j in enumerate(self.ram[:75])])
             # print('SP num: ', self.SP)
             # print('PC num: ', self.PC)
+            # print('flag: ', self.FL)
             # print('--------------------------')
             binary_op_code = self.ram_read(self.PC)
             op = op_codes[binary_op_code]
@@ -147,6 +165,21 @@ class CPU:
             elif op=='RET':
                 self.PC = self.ram_read(self.SP)
                 self.SP += 1
+            elif op=='JMP':
+                reg_num = self.ram_read(self.PC + 1)
+                self.PC = self.reg[reg_num]
+            elif op=='JEQ':
+                if self.FL==1:
+                    reg_num = self.ram_read(self.PC + 1)
+                    self.PC = self.reg[reg_num]
+                else: 
+                    self.PC += 2
+            elif op=='JNE':
+                if self.FL!=1:
+                    reg_num = self.ram_read(self.PC + 1)
+                    self.PC = self.reg[reg_num]
+                else:
+                    self.PC += 2
             elif op=='HLT':
                 break
             else:
